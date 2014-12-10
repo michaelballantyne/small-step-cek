@@ -36,7 +36,10 @@
       [(fresh (a b av bv x body env^)
          (== `(,a ,b) e)
          (== `(closure (lambda (,x) ,body) ,env^) av)
-         (== `(,a ,env ,av (,b ,env ,bv (,body ((,x . ,bv) . ,env^) ,out ,k))) state^))])))
+         (== `(,a ,env ,av
+                  (,b ,env ,bv
+                      (,body ((,x . ,bv) . ,env^) ,out ,k)))
+             state^))])))
 
 (define (step*o state)
   (fresh (state^)
@@ -49,39 +52,43 @@
   (step*o `(,exp ,env ,out halt)))
 
 (module+ test
-  (require rackunit)
+  (require "test-check.rkt")
 
-  (check-equal?
+  (test "lookupo"
     (run* (q) (lookupo 'a '((a . 5)) q))
     '(5))
 
-  (check-equal?
+  (test "variable lookup"
     (run* (q) (step-driver 'a '((a . 5)) q))
     '(5))
 
-  (check-equal?
+  (test "numeric literals"
     (run* (q) (step-driver '5 '() q))
     '(5))
 
-  (check-equal? (run 2 (q) (step-driver '(cons 1 2) '()  q)) '((pair 1 2)))
+  (test "cons"
+    (run 2 (q) (step-driver '(cons 1 2) '()  q))
+    '((pair 1 2)))
 
-  (check-equal? (run* (q) (step-driver '(cons (cons 1 2) (cons 2 3)) '() q))
-                '((pair (pair 1 2) (pair 2 3))))
+  (test "nested cons"
+    (run* (q) (step-driver '(cons (cons 1 2) (cons 2 3)) '() q))
+    '((pair (pair 1 2) (pair 2 3))))
 
-  (check-equal?
+  (test "identity function"
     (run* (q) (step-driver '((lambda (x) x) 5) '() q))
     '(5))
 
-  (check-equal?
+  (test "true function"
     (run* (q) (step-driver '(((lambda (x) (lambda (y) x)) 4) 5) '() q))
     '(4))
 
-  (check-equal?
+  (test "cons refutaton in car position"
     (run 1 (q) (fresh (x y) (step-driver `(cons 5 ,x) '() `(pair 6 ,y))))
     '())
 
-; Diverges, as expected.
-;  (check-equal?
-;    (run 1 (q) (fresh (x y) (step-driver `(cons ,x 5) '() `(pair ,y 6))))
-;    '())
+  (displayln "\nshould diverge:")
+  ; Diverges, as expected.
+  (test "cons refutation in cdr position"
+    (run 1 (q) (fresh (x y) (step-driver `(cons ,x 5) '() `(pair ,y 6))))
+    '())
   )

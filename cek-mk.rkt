@@ -58,34 +58,36 @@
   `(,e () halt))
 
 (module+ test
-  (require rackunit)
+  (require "test-check.rkt")
 
-  (check-equal?
+  (test "lookupo"
     (run* (q) (lookupo 'a '((a . 5)) q))
     '(5))
 
-  (check-equal?
+  (test "variable lookup"
     (run* (q) (step*o `(a ((a . 5)) halt) q))
     '(5))
 
-  (check-equal?
+  (test "numeric literals"
     (run* (q) (step*o (inject '5) q))
     '(5))
 
-  (check-equal? (run 2 (q) (step*o (inject '(cons 1 2)) q)) '((pair 1 2)))
+  (test "cons" (run 2 (q) (step*o (inject '(cons 1 2)) q)) '((pair 1 2)))
 
-  (check-equal? (run* (q) (step*o (inject '(cons (cons 1 2) (cons 2 3))) q))
+  (test "nested cons" (run* (q) (step*o (inject '(cons (cons 1 2) (cons 2 3))) q))
                 '((pair (pair 1 2) (pair 2 3))))
 
-  (check-equal?
+  (test "identity function"
     (run* (q) (step*o (inject '((lambda (x) x) 5)) q))
     '(5))
 
-  (check-equal?
+  (test "true function"
     (run* (q) (step*o (inject '(((lambda (x) (lambda (y) x)) 4) 5)) q))
     '(4))
 
-  (check-equal?
+  (displayln "\nshould diverge:")
+  ; Diverges, as expected.
+  (test "cons refutaton"
     (run 1 (q) (fresh (x y) (step*o (inject `(cons 5 ,x)) `(pair 6 ,y))))
     '())
   )
